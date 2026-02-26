@@ -1,0 +1,6 @@
+# Cloudflare Pages project configuration
+# https://developers.cloudflare.com/pages/platform/wrangler-configuration/
+
+name = "slowlytype"
+compatibility_date = "2025-02-26"
+pages_build_output_dir = "dist"

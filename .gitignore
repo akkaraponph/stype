@@ -1,0 +1,84 @@
+# ----------------------------------------------------------------              
+# Dependencies
+# ----------------------------------------------------------------
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+# Use this if you are using Yarn Berry (Zero Installs)
+# !.yarn/cache 
+
+# ----------------------------------------------------------------
+# Build & Output
+# ----------------------------------------------------------------
+/dist
+/build
+/out
+/.next/
+bin
+obj
+
+# ----------------------------------------------------------------
+# Testing & Coverage
+# ----------------------------------------------------------------
+/coverage
+/__snapshots__
+*.lcov
+.nyc_output
+
+# ----------------------------------------------------------------
+# Environment & Secrets (NEVER COMMIT)
+# ----------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# ----------------------------------------------------------------
+# Debug & Logs
+# ----------------------------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+logs
+*.log
+
+# ----------------------------------------------------------------
+# IDE & System Files
+# ----------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ----------------------------------------------------------------
+# Tooling & Frameworks
+# ----------------------------------------------------------------
+.vercel
+.turbo
+.wrangler
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+next-env.d.ts
+
+# Optional: Storybook
+/storybook-static
