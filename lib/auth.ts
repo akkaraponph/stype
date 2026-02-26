@@ -16,11 +16,19 @@ function getConnectionString(): string {
   return url;
 }
 
+const THEME_VALUES = ["light", "dark", "nord"] as const;
+export type ThemeValue = (typeof THEME_VALUES)[number];
+
+export function isValidTheme(v: string | null | undefined): v is ThemeValue {
+  return v === null || v === undefined || THEME_VALUES.includes(v as ThemeValue);
+}
+
 export interface AuthUser {
   id: string;
   email: string | null;
   name: string | null;
   image: string | null;
+  theme: string | null;
 }
 
 export function getSessionTokenFromRequest(request: Request): string | null {
@@ -58,6 +66,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
       email: u.email,
       name: u.name,
       image: u.image,
+      theme: u.theme ?? null,
     },
     hasPassword: !!u.passwordHash,
     hasGitHub: !!u.githubId,
@@ -171,7 +180,7 @@ export async function findUserByEmail(email: string): Promise<AuthUser | null> {
   const prisma = getPrisma(getConnectionString());
   const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
   if (!user) return null;
-  return { id: user.id, email: user.email, name: user.name, image: user.image };
+  return { id: user.id, email: user.email, name: user.name, image: user.image, theme: user.theme };
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -204,7 +213,7 @@ export async function createUserWithPassword(params: {
       githubId: null,
     },
   });
-  return { id: user.id, email: user.email, name: user.name, image: user.image };
+  return { id: user.id, email: user.email, name: user.name, image: user.image, theme: user.theme };
 }
 
 export async function verifyCredentials(email: string, password: string): Promise<AuthUser | null> {
@@ -216,7 +225,7 @@ export async function verifyCredentials(email: string, password: string): Promis
   if (!user || !user.passwordHash) return null;
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) return null;
-  return { id: user.id, email: user.email, name: user.name, image: user.image };
+  return { id: user.id, email: user.email, name: user.name, image: user.image, theme: user.theme };
 }
 
 export function validateEmailFormat(email: string): boolean {
@@ -229,13 +238,13 @@ export function validatePasswordLength(password: string): boolean {
 
 export async function updateUserProfile(
   userId: string,
-  data: { name?: string; email?: string }
+  data: { name?: string; email?: string; theme?: string | null }
 ): Promise<AuthUser> {
   const prisma = getPrisma(getConnectionString());
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("User not found");
 
-  const updates: { name?: string; email?: string } = {};
+  const updates: { name?: string; email?: string; theme?: string | null } = {};
 
   if (data.name !== undefined) {
     updates.name = data.name.trim() || null;
@@ -249,15 +258,22 @@ export async function updateUserProfile(
     updates.email = email;
   }
 
+  if (data.theme !== undefined) {
+    if (data.theme !== null && data.theme !== "" && !isValidTheme(data.theme)) {
+      throw new Error("Invalid theme; must be light, dark, or nord");
+    }
+    updates.theme = data.theme === "" ? null : data.theme;
+  }
+
   if (Object.keys(updates).length === 0) {
-    return { id: user.id, email: user.email, name: user.name, image: user.image };
+    return { id: user.id, email: user.email, name: user.name, image: user.image, theme: user.theme };
   }
 
   const updated = await prisma.user.update({
     where: { id: userId },
     data: updates,
   });
-  return { id: updated.id, email: updated.email, name: updated.name, image: updated.image };
+  return { id: updated.id, email: updated.email, name: updated.name, image: updated.image, theme: updated.theme };
 }
 
 export async function setPasswordForUser(
@@ -281,7 +297,7 @@ export async function setPasswordForUser(
     where: { id: userId },
     data: { email: emailNorm, passwordHash },
   });
-  return { id: updated.id, email: updated.email, name: updated.name, image: updated.image };
+  return { id: updated.id, email: updated.email, name: updated.name, image: updated.image, theme: updated.theme };
 }
 
 export async function changePasswordForUser(
@@ -389,5 +405,6 @@ export async function exchangeCodeForUser(
     email: user.email,
     name: user.name,
     image: user.image,
+    theme: user.theme,
   };
 }

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
+    "dev": "vinext dev",
+    "build": "vinext build",
     "lint": "eslint",
     "test": "vitest run",
     "db:generate": "prisma generate",

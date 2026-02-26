@@ -1,14 +1,18 @@
 "use client";
 
-import type { Duration, Language, TextMode } from "@/hooks/useTypingTexts";
+import type { Duration, Language, TextMode, WordLevel } from "@/hooks/useTypingTexts";
+
+const LEVELS: WordLevel[] = ["easy", "medium", "hard"];
 
 export interface ControlsProps {
   mode: TextMode;
   duration: Duration;
   language: Language;
+  levels: WordLevel[];
   onModeChange: (mode: TextMode) => void;
   onDurationChange: (duration: Duration) => void;
   onLanguageChange: (language: Language) => void;
+  onLevelsChange: (levels: WordLevel[]) => void;
   onRestart: () => void;
   disabled?: boolean;
   className?: string;
@@ -16,13 +20,27 @@ export interface ControlsProps {
 
 const DURATIONS: Duration[] = [15, 30, 60, 120];
 
+function toggleLevel(current: WordLevel[], level: WordLevel): WordLevel[] {
+  const has = current.includes(level);
+  if (has) {
+    const next = current.filter((l) => l !== level);
+    return next.length ? next : LEVELS;
+  }
+  const next = [...current, level].sort(
+    (a, b) => LEVELS.indexOf(a) - LEVELS.indexOf(b)
+  );
+  return next;
+}
+
 export default function Controls({
   mode,
   duration,
   language,
+  levels,
   onModeChange,
   onDurationChange,
   onLanguageChange,
+  onLevelsChange,
   onRestart,
   disabled,
   className = "",
@@ -84,6 +102,20 @@ export default function Controls({
       </div>
 
       <div className="flex items-center gap-2 border-l border-sub/20 pl-6">
+        {LEVELS.map((level) => (
+          <button
+            key={level}
+            onClick={() => onLevelsChange(toggleLevel(levels, level))}
+            className={`text-sm transition-colors px-2 py-1 capitalize ${levels.includes(level) ? "text-main" : "text-sub hover:text-main"}`}
+            disabled={disabled}
+            title={`Word level: ${level}`}
+          >
+            {level}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 border-l border-sub/20 pl-6">
         <button
           onClick={() => onLanguageChange("en")}
           className={`text-sm transition-colors px-2 py-1 ${language === "en" ? "text-main" : "text-sub hover:text-main"}`}
@@ -99,7 +131,7 @@ export default function Controls({
           thai
         </button>
       </div>
-      
+
       <button
         aria-label="Restart"
         onClick={onRestart}

@@ -16,11 +16,29 @@ model User {
   image        String?
   githubId     String?  @unique
   passwordHash String?
+  theme        String?  // "light" | "dark" | "nord"
+  preferences  Json?    // { stats: {...}, resultBlocks: {...}, fontSize: "normal"|"large" }
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions Session[]
-  typingHistory TypingHistoryEntry[]
+  sessions       Session[]
+  typingHistory  TypingHistoryEntry[]
+  customWords    CustomWord[]
+}
+
+model CustomWord {
+  id        String   @id @default(cuid())
+  userId    String
+  word      String
+  language  String   // "en" | "th"
+  level     String   // "easy" | "medium" | "hard"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, word, language])
+  @@index([userId])
+  @@index([userId, language, level])
 }
 
 model Session {

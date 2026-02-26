@@ -10,6 +10,8 @@ import HistoryPanel from "@/components/typing/HistoryPanel";
 import { AuthModal } from "@/components/AuthModal";
 import { useTypingHistory } from "@/hooks/useTypingHistory";
 import { useSession, type SessionUser } from "@/hooks/useSession";
+import { useCustomWords } from "@/hooks/useCustomWords";
+import { usePreferences } from "@/hooks/usePreferences";
 import { useTheme } from "@/hooks/useTheme";
 import {
   accuracy,
@@ -23,6 +25,7 @@ import {
   type Duration,
   type Language,
   type TextMode,
+  type WordLevel,
 } from "@/hooks/useTypingTexts";
 
 type View = "typing" | "account" | "settings";
@@ -68,6 +71,108 @@ function wpmBucketsFromTimestamps(
   return buckets;
 }
 
+const WORD_LEVELS = ["easy", "medium", "hard"] as const;
+const CUSTOM_WORD_LANGS = [
+  { value: "en" as const, label: "English" },
+  { value: "th" as const, label: "Thai" },
+];
+
+function CustomWordsSection() {
+  const [newWord, setNewWord] = useState("");
+  const [newLang, setNewLang] = useState<"en" | "th">("en");
+  const [newLevel, setNewLevel] = useState<"easy" | "medium" | "hard">("medium");
+  const {
+    words,
+    loading,
+    addWord,
+    addPending,
+    addError,
+    deleteWord,
+    deletePending,
+  } = useCustomWords();
+
+  const handleAdd = useCallback(async () => {
+    const word = newWord.trim();
+    if (!word) return;
+    try {
+      await addWord({ word, language: newLang, level: newLevel });
+      setNewWord("");
+    } catch {
+      // addError is set by mutation
+    }
+  }, [newWord, newLang, newLevel, addWord]);
+
+  return (
+    <section className="mb-10">
+      <h3 className="text-sub uppercase text-xs font-bold mb-4 tracking-widest">Custom words</h3>
+      <p className="text-sm text-sub mb-4">
+        Add words to include in typing tests. They will appear when you use the matching language and level.
+      </p>
+      <div className="flex flex-wrap gap-2 items-end mb-4">
+        <input
+          type="text"
+          value={newWord}
+          onChange={(e) => setNewWord(e.target.value)}
+          placeholder="Word"
+          className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main w-40"
+        />
+        <select
+          value={newLang}
+          onChange={(e) => setNewLang(e.target.value as "en" | "th")}
+          className="bg-background border border-sub/30 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-main"
+        >
+          {CUSTOM_WORD_LANGS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <select
+          value={newLevel}
+          onChange={(e) => setNewLevel(e.target.value as "easy" | "medium" | "hard")}
+          className="bg-background border border-sub/30 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-main"
+        >
+          {WORD_LEVELS.map((l) => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={addPending || !newWord.trim()}
+          className="rounded-lg bg-main/20 hover:bg-main/30 border border-main/50 text-foreground font-medium py-2 px-4 cursor-pointer disabled:opacity-50"
+        >
+          {addPending ? "Adding..." : "Add"}
+        </button>
+      </div>
+      {addError && (
+        <p className="text-error text-sm mb-2">{addError instanceof Error ? addError.message : "Failed to add word"}</p>
+      )}
+      {loading ? (
+        <p className="text-sub text-sm">Loading...</p>
+      ) : words.length === 0 ? (
+        <p className="text-sub text-sm">No custom words yet. Add one above.</p>
+      ) : (
+        <ul className="flex flex-col gap-1">
+          {words.map((w) => (
+            <li key={w.id} className="flex items-center justify-between py-1.5 border-b border-sub/10">
+              <span className="text-foreground">{w.word}</span>
+              <span className="text-sub text-xs mr-2">{w.language} / {w.level}</span>
+              <button
+                type="button"
+                onClick={() => deleteWord(w.id)}
+                disabled={deletePending}
+                className="text-sub hover:text-error text-sm cursor-pointer disabled:opacity-50"
+                aria-label={`Delete ${w.word}`}
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function SettingsView({
   user,
   hasPassword,
@@ -75,13 +180,17 @@ function SettingsView({
   theme,
   setTheme,
   updateProfile,
+  preferences,
+  updatePreferences,
 }: {
   user: SessionUser | null;
   hasPassword: boolean;
   hasGitHub: boolean;
   theme: string;
   setTheme: (t: string) => void;
-  updateProfile: (data: { name?: string; email?: string; password?: string; currentPassword?: string }) => Promise<{ ok: true } | { ok: false; error: string }>;
+  updateProfile: (data: { name?: string; email?: string; password?: string; currentPassword?: string; theme?: string | null }) => Promise<{ ok: true } | { ok: false; error: string }>;
+  preferences: import("@/lib/preferences").UserPreferences;
+  updatePreferences: (partial: Partial<import("@/lib/preferences").UserPreferences>) => void;
 }) {
   const [profileName, setProfileName] = useState(user?.name ?? "");
   const [profileEmail, setProfileEmail] = useState(user?.email ?? "");
@@ -430,6 +539,8 @@ function SettingsView({
               )}
             </div>
           </section>
+
+          <CustomWordsSection />
         </>
       )}
 
@@ -443,13 +554,70 @@ function SettingsView({
             </div>
             <select
               value={theme}
-              onChange={(e) => setTheme(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value as "light" | "dark" | "nord";
+                setTheme(value);
+                if (user) void updateProfile({ theme: value });
+              }}
               className="bg-background border border-sub/30 rounded px-4 py-1 text-foreground focus:outline-none focus:border-main"
             >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
               <option value="nord">Nord</option>
             </select>
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="font-bold text-foreground">Font size</div>
+              <div className="text-sm text-sub">Larger text in the typing area.</div>
+            </div>
+            <select
+              value={preferences.fontSize}
+              onChange={(e) => updatePreferences({ fontSize: e.target.value === "large" ? "large" : "normal" })}
+              className="bg-background border border-sub/30 rounded px-4 py-1 text-foreground focus:outline-none focus:border-main"
+            >
+              <option value="normal">Normal</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-10">
+        <h3 className="text-sub uppercase text-xs font-bold mb-4 tracking-widest">Customize</h3>
+        <p className="text-sm text-sub mb-4">Choose which stats and result blocks to show.</p>
+        <div className="flex flex-col gap-6">
+          <div>
+            <div className="font-bold text-foreground mb-2">Live stats (during test)</div>
+            <div className="flex flex-wrap gap-4">
+              {(["wpm", "accuracy", "time", "smoothness", "consistency"] as const).map((key) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={preferences.stats[key]}
+                    onChange={(e) => updatePreferences({ stats: { ...preferences.stats, [key]: e.target.checked } })}
+                    className="rounded border-sub/30 text-main focus:ring-main"
+                  />
+                  <span className="text-sm text-foreground capitalize">{key}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="font-bold text-foreground mb-2">Result screen blocks</div>
+            <div className="flex flex-wrap gap-4">
+              {(["wpm", "accuracy", "chars", "time"] as const).map((key) => (
+                <label key={key} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={preferences.resultBlocks[key]}
+                    onChange={(e) => updatePreferences({ resultBlocks: { ...preferences.resultBlocks, [key]: e.target.checked } })}
+                    className="rounded border-sub/30 text-main focus:ring-main"
+                  />
+                  <span className="text-sm text-foreground">{key === "chars" ? "Characters" : key === "wpm" ? "WPM" : key === "accuracy" ? "Accuracy" : "Time"}</span>
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -462,6 +630,7 @@ export default function Home() {
   const [mode, setMode] = useState<TextMode>("words");
   const [duration, setDuration] = useState<Duration>(60);
   const [language, setLanguage] = useState<Language>("en");
+  const [levels, setLevels] = useState<WordLevel[]>(["easy", "medium", "hard"]);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [input, setInput] = useState("");
@@ -474,11 +643,19 @@ export default function Home() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
 
-  const { data: textData, refetch } = useTypingTexts(mode, duration, language);
+  const { data: textData, refetch } = useTypingTexts(mode, duration, language, levels);
   const text = textData?.text ?? "";
   const { user, loading: sessionLoading, hasPassword, hasGitHub, signIn, signOut, signInWithCredentials, register, updateProfile } = useSession();
+  const { preferences, updatePreferences } = usePreferences(user);
   const { history, addEntry, clearHistory, historyLoading } = useTypingHistory(user);
   const savedRef = useRef(false);
+
+  // Sync account theme to local when session loads (so theme is remembered per account)
+  useEffect(() => {
+    if (!user?.theme) return;
+    const t = user.theme;
+    if (t === "light" || t === "dark" || t === "nord") setTheme(t);
+  }, [user?.theme, setTheme]);
 
   const endTyping = useCallback(() => {
     setFinished(true);
@@ -716,13 +893,14 @@ export default function Home() {
       )}
       <main className="flex-grow flex flex-col items-center justify-center">
         {view === "typing" && (
-          <div className="w-full max-w-4xl">
+          <div className={`w-full max-w-4xl ${preferences.fontSize === "large" ? "text-lg" : ""}`}>
             {!finished && (
               <div className={`transition-opacity duration-500 ${started ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
                 <Controls
                   mode={mode}
                   duration={duration}
                   language={language}
+                  levels={levels}
                   onModeChange={(m) => {
                     setMode(m);
                     changeSettings();
@@ -733,6 +911,10 @@ export default function Home() {
                   }}
                   onLanguageChange={(lang) => {
                     setLanguage(lang);
+                    changeSettings();
+                  }}
+                  onLevelsChange={(l) => {
+                    setLevels(l);
                     changeSettings();
                   }}
                   onRestart={restartSame}
@@ -748,6 +930,7 @@ export default function Home() {
                 elapsedSeconds={elapsed}
                 avgKeyIntervalMs={avgInterval}
                 consistency={consistency}
+                visibleStats={preferences.stats}
               />
             </div>
 
@@ -776,6 +959,7 @@ export default function Home() {
                 totalChars={input.length}
                 errors={input.length - correctChars}
                 timeSeconds={elapsed}
+                visibleBlocks={preferences.resultBlocks}
               />
             )}
           </div>
@@ -819,6 +1003,8 @@ export default function Home() {
             theme={theme}
             setTheme={setTheme}
             updateProfile={updateProfile}
+            preferences={preferences}
+            updatePreferences={updatePreferences}
           />
         )}
       </main>

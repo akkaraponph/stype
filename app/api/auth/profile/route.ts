@@ -4,6 +4,7 @@ import {
   updateUserProfile,
   setPasswordForUser,
   changePasswordForUser,
+  isValidTheme,
 } from "@/lib/auth";
 
 type Body = {
@@ -11,6 +12,7 @@ type Body = {
   email?: string;
   password?: string;
   currentPassword?: string;
+  theme?: string | null;
 };
 
 export async function POST(request: Request) {
@@ -31,6 +33,17 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email : undefined;
   const password = typeof body.password === "string" ? body.password : undefined;
   const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : undefined;
+
+  let theme: string | null | undefined = undefined;
+  if (body.theme !== undefined) {
+    if (body.theme === null || body.theme === "") {
+      theme = null;
+    } else if (typeof body.theme === "string" && isValidTheme(body.theme)) {
+      theme = body.theme;
+    } else {
+      return NextResponse.json({ error: "Invalid theme; must be light, dark, or nord" }, { status: 400 });
+    }
+  }
 
   try {
     if (password !== undefined) {
@@ -55,9 +68,11 @@ export async function POST(request: Request) {
     }
 
     if (name !== undefined || (email !== undefined && (password === undefined || hasPassword))) {
-      await updateUserProfile(userId, { name, email });
+      await updateUserProfile(userId, { name, email, ...(theme !== undefined && { theme }) });
     } else if (password !== undefined && !hasPassword && name !== undefined) {
-      await updateUserProfile(userId, { name });
+      await updateUserProfile(userId, { name, ...(theme !== undefined && { theme }) });
+    } else if (theme !== undefined) {
+      await updateUserProfile(userId, { theme });
     }
   } catch (e) {
     const message = e instanceof Error ? e.message : "Update failed";

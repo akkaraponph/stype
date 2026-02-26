@@ -7,6 +7,7 @@ export interface SessionUser {
   email: string | null;
   name: string | null;
   image: string | null;
+  theme: string | null;
 }
 
 export function useSession() {
@@ -107,6 +108,7 @@ export function useSession() {
       email?: string;
       password?: string;
       currentPassword?: string;
+      theme?: string | null;
     }): Promise<{ ok: true } | { ok: false; error: string }> => {
       const res = await fetch("/api/auth/profile", {
         method: "POST",
