@@ -47,6 +47,18 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
         (atEnd ? spanRect.width : 0);
       const y = spanRect.top - containerRect.top;
       setCursorPos({ x, y });
+
+      // Ensure the current character is visible
+      const isVisible =
+        spanRect.top >= containerRect.top &&
+        spanRect.bottom <= containerRect.bottom;
+
+      if (!isVisible) {
+        span.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
     }, [input.length, chars.length, text]);
 
     useLayoutEffect(() => {
@@ -72,7 +84,7 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
       >
         <div
           ref={containerRef}
-          className="relative min-h-[5rem] cursor-text select-none break-words text-lg sm:text-xl md:text-2xl leading-relaxed sm:leading-loose tracking-wide text-zinc-500 dark:text-zinc-400"
+          className="relative min-h-[5rem] max-h-[12rem] overflow-y-auto cursor-text select-none break-words text-lg sm:text-xl md:text-2xl leading-relaxed sm:leading-loose tracking-wide text-zinc-500 dark:text-zinc-400 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
           onClick={() => inputRef.current?.focus()}
           role="button"
           tabIndex={-1}

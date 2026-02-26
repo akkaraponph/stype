@@ -27,7 +27,12 @@ export async function GET(request: NextRequest) {
   if (m === "quotes") {
     text = getQuote(lang);
   } else {
-    const wordCount = d;
+    const wordCountMap: Record<number, number> = {
+      15: 100,
+      30: 150,
+      60: 300,
+    };
+    const wordCount = wordCountMap[d] ?? d;
     text = getWords(wordCount, lang);
   }
 
