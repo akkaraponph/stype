@@ -1,5 +1,5 @@
 name = "slowlytype"
-compatibility_date = "2025-02-26"
+compatibility_date = "2025-05-08"
 compatibility_flags = ["nodejs_compat"]
 main = "./worker/index.ts"
 

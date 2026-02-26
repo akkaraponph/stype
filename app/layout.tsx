@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "slowlytype",
+  title: "Stype",
   description: "Minimal typing test focused on calm, consistent typing",
 };
 

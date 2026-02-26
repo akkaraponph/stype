@@ -97,6 +97,7 @@ export default function HistoryPanel({
               <thead>
                 <tr className="text-left text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
                   <th className="pb-2 pr-3 font-medium">Date</th>
+                  <th className="pb-2 pr-3 font-medium">Lang</th>
                   <th className="pb-2 pr-3 font-medium">Mode</th>
                   <th className="pb-2 pr-3 font-medium">Duration</th>
                   <th className="pb-2 pr-3 font-medium">WPM</th>
@@ -113,6 +114,9 @@ export default function HistoryPanel({
                   >
                     <td className="py-2 pr-3 text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
                       {formatDate(entry.timestamp)}
+                    </td>
+                    <td className="py-2 pr-3 text-zinc-600 dark:text-zinc-300">
+                      {entry.language === "th" ? "Th" : "En"}
                     </td>
                     <td className="py-2 pr-3 text-zinc-600 dark:text-zinc-300">
                       {entry.mode}

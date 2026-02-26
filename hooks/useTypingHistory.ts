@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import type { TextMode, Duration } from "@/hooks/useTestTexts";
+import type { TextMode, Duration, Language } from "@/hooks/useTestTexts";
 
 export interface TypingHistoryEntry {
   id: string;
@@ -11,6 +11,7 @@ export interface TypingHistoryEntry {
   consistency?: number;
   mode: TextMode;
   duration: Duration;
+  language?: Language;
   wpmBuckets: number[];
   timestamp: number;
 }

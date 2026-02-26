@@ -30,6 +30,9 @@ npm run deploy
 
 # Deploy to a preview URL
 npm run deploy:preview
+
+# Deploy with experimental TPR (Trusted Publisher Registry)
+npx vinext deploy --experimental-tpr
 ```
 
 Uses [Wrangler](https://developers.cloudflare.com/workers/wrangler/) under the hood; configure `wrangler.toml` and Cloudflare account as needed.

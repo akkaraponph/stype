@@ -2,6 +2,8 @@
  * Test text generation: word lists and calm quotes.
  */
 
+export type Language = "en" | "th";
+
 const COMMON_WORDS = [
   "the",
   "be",
@@ -105,6 +107,163 @@ const COMMON_WORDS = [
   "us",
 ];
 
+const COMMON_WORDS_TH = [
+  "เป็น",
+  "มี",
+  "ไป",
+  "มา",
+  "อยู่",
+  "นี้",
+  "ที่",
+  "กับ",
+  "ใน",
+  "ได้",
+  "เขา",
+  "เรา",
+  "เธอ",
+  "ใคร",
+  "อะไร",
+  "อย่างไร",
+  "เมื่อไหร่",
+  "ทำ",
+  "ดู",
+  "กิน",
+  "เรียน",
+  "ทำงาน",
+  "ดี",
+  "ใหญ่",
+  "เล็ก",
+  "สวย",
+  "เร็ว",
+  "ช้า",
+  "ใหม่",
+  "เก่า",
+  "มาก",
+  "น้อย",
+  "วัน",
+  "เดือน",
+  "ปี",
+  "เวลา",
+  "คน",
+  "บ้าน",
+  "อาหาร",
+  "น้ำ",
+  "เงิน",
+  "หนังสือ",
+  "รถ",
+  "เมือง",
+  "ประเทศ",
+  "โลก",
+  "ครอบครัว",
+  "เพื่อน",
+  "พ่อ",
+  "แม่",
+  "ลูก",
+  "ครู",
+  "นักเรียน",
+  "งาน",
+  "โรงเรียน",
+  "มหาวิทยาลัย",
+  "ที่",
+  "หรือ",
+  "แต่",
+  "เพราะ",
+  "ถ้า",
+  "แล้ว",
+  "ก็",
+  "จะ",
+  "ไม่",
+  "ยัง",
+  "อีก",
+  "ทุก",
+  "บาง",
+  "มาก",
+  "น้อย",
+  "เลย",
+  "เท่านั้น",
+  "ด้วย",
+  "กัน",
+  "เอง",
+  "เช่น",
+  "เหมือน",
+  "ต่าง",
+  "กัน",
+  "จริง",
+  "แน่นอน",
+  "อาจ",
+  "ต้อง",
+  "ควร",
+  "สามารถ",
+  "ชอบ",
+  "รัก",
+  "คิด",
+  "รู้",
+  "เข้าใจ",
+  "บอก",
+  "ถาม",
+  "ตอบ",
+  "เปิด",
+  "ปิด",
+  "เดิน",
+  "นั่ง",
+  "นอน",
+  "ยืน",
+  "วิ่ง",
+  "อ่าน",
+  "เขียน",
+  "พูด",
+  "ฟัง",
+  "รอ",
+  "หา",
+  "ให้",
+  "รับ",
+  "ส่ง",
+  "ซื้อ",
+  "ขาย",
+  "ใช้",
+  "สร้าง",
+  "เปลี่ยน",
+  "เพิ่ม",
+  "ลด",
+  "เริ่ม",
+  "จบ",
+  "ต่อไป",
+  "ก่อน",
+  "หลัง",
+  "ระหว่าง",
+  "ข้าง",
+  "บน",
+  "ล่าง",
+  "ใน",
+  "นอก",
+  "ใกล้",
+  "ไกล",
+  "สูง",
+  "ต่ำ",
+  "ยาว",
+  "สั้น",
+  "กว้าง",
+  "แคบ",
+  "หนา",
+  "บาง",
+  "หนัก",
+  "เบา",
+  "ร้อน",
+  "เย็น",
+  "สว่าง",
+  "มืด",
+  "สวย",
+  "น่าเกลียด",
+  "ง่าย",
+  "ยาก",
+  "ดี",
+  "แย่",
+  "ถูก",
+  "ผิด",
+  "จริง",
+  "เท็จ",
+];
+
 const CALM_QUOTES = [
   "Breathe in calm, breathe out stress.",
   "Slow and steady wins the race.",
@@ -113,16 +272,26 @@ const CALM_QUOTES = [
   "Patience is the key to clarity.",
 ];
 
-export function getWords(count: number): string {
+const CALM_QUOTES_TH = [
+  "หายใจเข้า สบาย หายใจออก ปล่อยความเครียด",
+  "ช้าและมั่นคงชนะการแข่งขัน",
+  "ความสงบมาจากภายใน",
+  "ทีละปุ่ม ทีละคำ",
+  "ความอดทนคือกุญแจสู่ความชัดเจน",
+];
+
+export function getWords(count: number, lang: Language = "en"): string {
+  const list = lang === "th" ? COMMON_WORDS_TH : COMMON_WORDS;
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
-    const idx = Math.floor(Math.random() * COMMON_WORDS.length);
-    words.push(COMMON_WORDS[idx]!);
+    const idx = Math.floor(Math.random() * list.length);
+    words.push(list[idx]!);
   }
   return words.join(" ");
 }
 
-export function getQuote(): string {
-  const idx = Math.floor(Math.random() * CALM_QUOTES.length);
-  return CALM_QUOTES[idx]!;
+export function getQuote(lang: Language = "en"): string {
+  const list = lang === "th" ? CALM_QUOTES_TH : CALM_QUOTES;
+  const idx = Math.floor(Math.random() * list.length);
+  return list[idx]!;
 }

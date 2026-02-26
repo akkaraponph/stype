@@ -18,6 +18,7 @@ import {
 import {
   useTestTexts,
   type Duration,
+  type Language,
   type TextMode,
 } from "@/hooks/useTestTexts";
 
@@ -66,6 +67,7 @@ function wpmBucketsFromTimestamps(
 export default function Home() {
   const [mode, setMode] = useState<TextMode>("words");
   const [duration, setDuration] = useState<Duration>(60);
+  const [language, setLanguage] = useState<Language>("en");
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [input, setInput] = useState("");
@@ -74,7 +76,7 @@ export default function Home() {
   const [elapsed, setElapsed] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { data: textData, refetch } = useTestTexts(mode, duration);
+  const { data: textData, refetch } = useTestTexts(mode, duration, language);
   const text = textData?.text ?? "";
   const { history, addEntry, clearHistory } = useTypingHistory();
   const savedRef = useRef(false);
@@ -125,6 +127,7 @@ export default function Home() {
         consistency,
         mode,
         duration,
+        language,
         wpmBuckets,
       });
     }
@@ -209,8 +212,14 @@ export default function Home() {
     <div className="flex min-h-screen flex-col bg-background">
       <header className="py-4 sm:py-6 flex flex-col items-center gap-1">
         <div className="flex items-center justify-center gap-2 w-full">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-foreground text-background"
+            aria-hidden
+          >
+            <span className="text-sm font-semibold">S</span>
+          </div>
           <h1 className="text-lg sm:text-xl font-medium text-zinc-700 dark:text-zinc-300">
-            slowlytype
+            Stype
           </h1>
           <ThemeSwitch />
         </div>
@@ -223,6 +232,7 @@ export default function Home() {
         <Controls
           mode={mode}
           duration={duration}
+          language={language}
           onModeChange={(m) => {
             savedRef.current = false;
             setMode(m);
@@ -236,6 +246,16 @@ export default function Home() {
           onDurationChange={(d) => {
             savedRef.current = false;
             setDuration(d);
+            setInput("");
+            setStarted(false);
+            setFinished(false);
+            setStartTime(null);
+            setKeyTimestamps([]);
+            setElapsed(0);
+          }}
+          onLanguageChange={(lang) => {
+            savedRef.current = false;
+            setLanguage(lang);
             setInput("");
             setStarted(false);
             setFinished(false);
