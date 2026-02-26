@@ -33,6 +33,8 @@ export function getSessionTokenFromRequest(request: Request): string | null {
 export async function getSessionFromRequest(request: Request): Promise<{
   userId: string;
   user: AuthUser;
+  hasPassword: boolean;
+  hasGitHub: boolean;
 } | null> {
   const token = getSessionTokenFromRequest(request);
   if (!token) return null;
@@ -48,14 +50,17 @@ export async function getSessionFromRequest(request: Request): Promise<{
     return null;
   }
 
+  const u = session.user;
   return {
     userId: session.userId,
     user: {
-      id: session.user.id,
-      email: session.user.email,
-      name: session.user.name,
-      image: session.user.image,
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      image: u.image,
     },
+    hasPassword: !!u.passwordHash,
+    hasGitHub: !!u.githubId,
   };
 }
 
@@ -220,6 +225,81 @@ export function validateEmailFormat(email: string): boolean {
 
 export function validatePasswordLength(password: string): boolean {
   return password.length >= MIN_PASSWORD_LENGTH;
+}
+
+export async function updateUserProfile(
+  userId: string,
+  data: { name?: string; email?: string }
+): Promise<AuthUser> {
+  const prisma = getPrisma(getConnectionString());
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+
+  const updates: { name?: string; email?: string } = {};
+
+  if (data.name !== undefined) {
+    updates.name = data.name.trim() || null;
+  }
+
+  if (data.email !== undefined) {
+    const email = data.email.trim().toLowerCase();
+    if (!isValidEmail(email)) throw new Error("Invalid email format");
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.id !== userId) throw new Error("An account with this email already exists");
+    updates.email = email;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { id: user.id, email: user.email, name: user.name, image: user.image };
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: updates,
+  });
+  return { id: updated.id, email: updated.email, name: updated.name, image: updated.image };
+}
+
+export async function setPasswordForUser(
+  userId: string,
+  email: string,
+  password: string
+): Promise<AuthUser> {
+  const prisma = getPrisma(getConnectionString());
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+
+  const emailNorm = email.trim().toLowerCase();
+  if (!isValidEmail(emailNorm)) throw new Error("Invalid email format");
+  if (!validatePasswordLength(password)) throw new Error("Password must be at least 8 characters");
+
+  const existing = await prisma.user.findUnique({ where: { email: emailNorm } });
+  if (existing && existing.id !== userId) throw new Error("An account with this email already exists");
+
+  const passwordHash = await hashPassword(password);
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { email: emailNorm, passwordHash },
+  });
+  return { id: updated.id, email: updated.email, name: updated.name, image: updated.image };
+}
+
+export async function changePasswordForUser(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const prisma = getPrisma(getConnectionString());
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !user.passwordHash) throw new Error("User has no password set");
+  const ok = await verifyPassword(currentPassword, user.passwordHash);
+  if (!ok) throw new Error("Current password is incorrect");
+  if (!validatePasswordLength(newPassword)) throw new Error("Password must be at least 8 characters");
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash },
+  });
 }
 
 export function githubAuthUrl(state: string): string {

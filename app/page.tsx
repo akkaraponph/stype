@@ -9,7 +9,7 @@ import ThemeSwitch from "@/components/ThemeSwitch";
 import HistoryPanel from "@/components/typing/HistoryPanel";
 import { AuthModal } from "@/components/AuthModal";
 import { useTypingHistory } from "@/hooks/useTypingHistory";
-import { useSession } from "@/hooks/useSession";
+import { useSession, type SessionUser } from "@/hooks/useSession";
 import { useTheme } from "@/hooks/useTheme";
 import {
   accuracy,
@@ -68,6 +68,296 @@ function wpmBucketsFromTimestamps(
   return buckets;
 }
 
+function SettingsView({
+  user,
+  hasPassword,
+  hasGitHub,
+  theme,
+  setTheme,
+  updateProfile,
+}: {
+  user: SessionUser | null;
+  hasPassword: boolean;
+  hasGitHub: boolean;
+  theme: string;
+  setTheme: (t: string) => void;
+  updateProfile: (data: { name?: string; email?: string; password?: string; currentPassword?: string }) => Promise<{ ok: true } | { ok: false; error: string }>;
+}) {
+  const [profileName, setProfileName] = useState(user?.name ?? "");
+  const [profileEmail, setProfileEmail] = useState(user?.email ?? "");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+
+  const [showPasswordForm, setShowPasswordForm] = useState<"none" | "add" | "change">("none");
+  const [addEmail, setAddEmail] = useState(user?.email ?? "");
+  const [addPassword, setAddPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const syncProfileFromUser = useCallback(() => {
+    setProfileName(user?.name ?? "");
+    setProfileEmail(user?.email ?? "");
+    setAddEmail(user?.email ?? "");
+  }, [user?.name, user?.email]);
+  useEffect(syncProfileFromUser, [syncProfileFromUser]);
+
+  const handleSaveProfile = useCallback(async () => {
+    setProfileError(null);
+    setProfileSuccess(false);
+    setProfileSaving(true);
+    try {
+      const result = await updateProfile({ name: profileName.trim() || undefined, email: profileEmail.trim() || undefined });
+      if (result.ok) {
+        setProfileSuccess(true);
+        setTimeout(() => setProfileSuccess(false), 2000);
+      } else {
+        setProfileError(result.error);
+      }
+    } finally {
+      setProfileSaving(false);
+    }
+  }, [profileName, profileEmail, updateProfile]);
+
+  const handleAddPassword = useCallback(async () => {
+    setPasswordError(null);
+    setPasswordSaving(true);
+    try {
+      const result = await updateProfile({
+        email: addEmail.trim() || undefined,
+        password: addPassword,
+      });
+      if (result.ok) {
+        setShowPasswordForm("none");
+        setAddPassword("");
+      } else {
+        setPasswordError(result.error);
+      }
+    } finally {
+      setPasswordSaving(false);
+    }
+  }, [addEmail, addPassword, updateProfile]);
+
+  const handleChangePassword = useCallback(async () => {
+    setPasswordError(null);
+    setPasswordSaving(true);
+    try {
+      const result = await updateProfile({
+        currentPassword,
+        password: newPassword,
+      });
+      if (result.ok) {
+        setShowPasswordForm("none");
+        setCurrentPassword("");
+        setNewPassword("");
+      } else {
+        setPasswordError(result.error);
+      }
+    } finally {
+      setPasswordSaving(false);
+    }
+  }, [currentPassword, newPassword, updateProfile]);
+
+  return (
+    <div className="w-full max-w-2xl animate-in fade-in duration-500">
+      <h2 className="text-3xl font-bold mb-8">Settings</h2>
+
+      {user && (
+        <>
+          <section className="mb-10">
+            <h3 className="text-sub uppercase text-xs font-bold mb-4 tracking-widest">Profile</h3>
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center gap-4">
+                {user.image ? (
+                  <img src={user.image} alt="" className="w-16 h-16 rounded-full" width={64} height={64} />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-main/30 flex items-center justify-center text-main text-lg font-bold">
+                    {(user.name ?? user.email ?? "?")[0]?.toUpperCase() ?? "?"}
+                  </div>
+                )}
+                <div className="flex-1 flex flex-col gap-3">
+                  <div>
+                    <label htmlFor="settings-name" className="block text-sm font-medium text-foreground mb-1">Display name</label>
+                    <input
+                      id="settings-name"
+                      type="text"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      className="w-full rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="settings-email" className="block text-sm font-medium text-foreground mb-1">Email</label>
+                    <input
+                      id="settings-email"
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      className="w-full rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  {profileError && <p className="text-error text-sm">{profileError}</p>}
+                  {profileSuccess && <p className="text-main text-sm">Profile saved.</p>}
+                  <button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={profileSaving}
+                    className="self-start rounded-lg bg-main/20 hover:bg-main/30 border border-main/50 text-foreground font-medium py-2 px-4 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {profileSaving ? "Saving..." : "Save profile"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="mb-10">
+            <h3 className="text-sub uppercase text-xs font-bold mb-4 tracking-widest">Sign-in methods</h3>
+            <div className="flex flex-col gap-4">
+              {hasGitHub && (
+                <div className="flex justify-between items-center py-2 border-b border-sub/20">
+                  <span className="text-foreground">GitHub</span>
+                  <span className="text-main text-sm">Connected</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-2 border-b border-sub/20">
+                <span className="text-foreground">Email / password</span>
+                {hasPassword ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-main text-sm">Set</span>
+                    {showPasswordForm !== "change" ? (
+                      <button
+                        type="button"
+                        onClick={() => { setShowPasswordForm("change"); setPasswordError(null); }}
+                        className="text-sub hover:text-main text-sm cursor-pointer"
+                      >
+                        Change password
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sub text-sm">Not set</span>
+                    {showPasswordForm !== "add" ? (
+                      <button
+                        type="button"
+                        onClick={() => { setShowPasswordForm("add"); setPasswordError(null); setAddEmail(user?.email ?? ""); }}
+                        className="text-sub hover:text-main text-sm cursor-pointer"
+                      >
+                        Add password
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+
+              {showPasswordForm === "add" && (
+                <div className="p-4 rounded-xl bg-sub/10 border border-sub/20 flex flex-col gap-3">
+                  <p className="text-sub text-sm">Set an email and password to also sign in with credentials.</p>
+                  <input
+                    type="email"
+                    value={addEmail}
+                    onChange={(e) => setAddEmail(e.target.value)}
+                    placeholder="Email"
+                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
+                  />
+                  <input
+                    type="password"
+                    value={addPassword}
+                    onChange={(e) => setAddPassword(e.target.value)}
+                    placeholder="Password (min 8 characters)"
+                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
+                  />
+                  {passwordError && <p className="text-error text-sm">{passwordError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAddPassword}
+                      disabled={passwordSaving || !addEmail.trim() || addPassword.length < 8}
+                      className="rounded-lg bg-main/20 hover:bg-main/30 border border-main/50 text-foreground font-medium py-2 px-4 cursor-pointer disabled:opacity-50"
+                    >
+                      {passwordSaving ? "Saving..." : "Add password"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowPasswordForm("none"); setPasswordError(null); }}
+                      className="rounded-lg border border-sub/30 text-sub hover:text-foreground py-2 px-4 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showPasswordForm === "change" && (
+                <div className="p-4 rounded-xl bg-sub/10 border border-sub/20 flex flex-col gap-3">
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password"
+                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
+                  />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password (min 8 characters)"
+                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
+                  />
+                  {passwordError && <p className="text-error text-sm">{passwordError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleChangePassword}
+                      disabled={passwordSaving || !currentPassword || newPassword.length < 8}
+                      className="rounded-lg bg-main/20 hover:bg-main/30 border border-main/50 text-foreground font-medium py-2 px-4 cursor-pointer disabled:opacity-50"
+                    >
+                      {passwordSaving ? "Saving..." : "Change password"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowPasswordForm("none"); setPasswordError(null); }}
+                      className="rounded-lg border border-sub/30 text-sub hover:text-foreground py-2 px-4 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+
+      <section className="mb-10">
+        <h3 className="text-sub uppercase text-xs font-bold mb-4 tracking-widest">Appearance</h3>
+        <div className="flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="font-bold text-foreground">Theme</div>
+              <div className="text-sm text-sub">Change the color palette.</div>
+            </div>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value)}
+              className="bg-background border border-sub/30 rounded px-4 py-1 text-foreground focus:outline-none focus:border-main"
+            >
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="nord">Nord</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function Home() {
   const [view, setView] = useState<View>("typing");
   const [mode, setMode] = useState<TextMode>("words");
@@ -87,7 +377,7 @@ export default function Home() {
 
   const { data: textData, refetch } = useTypingTexts(mode, duration, language);
   const text = textData?.text ?? "";
-  const { user, loading: sessionLoading, signIn, signOut, signInWithCredentials, register } = useSession();
+  const { user, loading: sessionLoading, hasPassword, hasGitHub, signIn, signOut, signInWithCredentials, register, updateProfile } = useSession();
   const { history, addEntry, clearHistory, historyLoading } = useTypingHistory(user);
   const savedRef = useRef(false);
 
@@ -395,10 +685,24 @@ export default function Home() {
         {view === "account" && (
           <div className="w-full max-w-4xl animate-in fade-in duration-500">
             <h2 className="text-3xl font-bold mb-8">Account</h2>
-            {!user && (
+            {!user ? (
               <p className="mb-6 p-4 rounded-xl bg-sub/10 border border-sub/20 text-sub text-sm">
                 Sign in with GitHub to save and sync your typing history across devices.
               </p>
+            ) : (
+              <div className="mb-8 p-4 rounded-xl bg-sub/10 border border-sub/20 flex items-center gap-4">
+                {user.image ? (
+                  <img src={user.image} alt="" className="w-14 h-14 rounded-full flex-shrink-0" width={56} height={56} />
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-main/30 flex items-center justify-center text-main font-bold flex-shrink-0">
+                    {(user.name ?? user.email ?? "?")[0]?.toUpperCase() ?? "?"}
+                  </div>
+                )}
+                <div>
+                  <div className="font-bold text-foreground">{user.name ?? user.email ?? "User"}</div>
+                  {user.email && <div className="text-sm text-sub">{user.email}</div>}
+                </div>
+              </div>
             )}
             <HistoryPanel
               history={history}
@@ -409,29 +713,14 @@ export default function Home() {
         )}
 
         {view === "settings" && (
-          <div className="w-full max-w-2xl animate-in fade-in duration-500">
-            <h2 className="text-3xl font-bold mb-8">Settings</h2>
-            <section className="mb-10">
-              <h3 className="text-sub uppercase text-xs font-bold mb-4 tracking-widest">Appearance</h3>
-              <div className="flex flex-col gap-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-foreground">Theme</div>
-                    <div className="text-sm text-sub">Change the color palette.</div>
-                  </div>
-                  <select 
-                    value={theme} 
-                    onChange={(e) => setTheme(e.target.value as any)}
-                    className="bg-background border border-sub/30 rounded px-4 py-1 text-foreground focus:outline-none focus:border-main"
-                  >
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                    <option value="nord">Nord</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-          </div>
+          <SettingsView
+            user={user}
+            hasPassword={hasPassword}
+            hasGitHub={hasGitHub}
+            theme={theme}
+            setTheme={setTheme}
+            updateProfile={updateProfile}
+          />
         )}
       </main>
 

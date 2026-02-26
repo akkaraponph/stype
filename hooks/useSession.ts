@@ -13,13 +13,24 @@ export function useSession() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [hasPassword, setHasPassword] = useState(false);
+  const [hasGitHub, setHasGitHub] = useState(false);
+
   const fetchSession = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/session", { credentials: "include" });
-      const data = (await res.json()) as { user: SessionUser | null };
+      const data = (await res.json()) as {
+        user: SessionUser | null;
+        hasPassword?: boolean;
+        hasGitHub?: boolean;
+      };
       setUser(data.user ?? null);
+      setHasPassword(data.hasPassword ?? false);
+      setHasGitHub(data.hasGitHub ?? false);
     } catch {
       setUser(null);
+      setHasPassword(false);
+      setHasGitHub(false);
     } finally {
       setLoading(false);
     }
@@ -83,13 +94,40 @@ export function useSession() {
     [fetchSession]
   );
 
+  const updateProfile = useCallback(
+    async (data: {
+      name?: string;
+      email?: string;
+      password?: string;
+      currentPassword?: string;
+    }): Promise<{ ok: true } | { ok: false; error: string }> => {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const body = (await res.json()) as { user?: SessionUser; error?: string };
+      if (!res.ok) {
+        return { ok: false, error: body.error ?? "Update failed" };
+      }
+      if (body.user) setUser(body.user);
+      await fetchSession();
+      return { ok: true };
+    },
+    [fetchSession]
+  );
+
   return {
     user,
     loading,
+    hasPassword,
+    hasGitHub,
     signIn,
     signOut,
     signInWithCredentials,
     register,
+    updateProfile,
     refetchSession: fetchSession,
   };
 }
