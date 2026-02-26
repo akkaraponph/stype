@@ -40,21 +40,60 @@ function saveHistory(entries: TypingHistoryEntry[]) {
   }
 }
 
+function entryToPayload(entry: TypingHistoryEntry) {
+  return {
+    wpm: entry.wpm,
+    accuracy: entry.accuracy,
+    avgIntervalMs: entry.avgIntervalMs,
+    consistency: entry.consistency,
+    mode: entry.mode,
+    duration: entry.duration,
+    language: entry.language,
+    wpmBuckets: Array.isArray(entry.wpmBuckets) ? entry.wpmBuckets : [],
+  };
+}
+
 export function useTypingHistory(user: SessionUser | null) {
   const [history, setHistory] = useState<TypingHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(!!user);
 
-  // When logged in: fetch from API. When not: hydrate from localStorage.
+  // When logged in: sync localStorage → API, clear localStorage, then fetch. When not: hydrate from localStorage.
   useEffect(() => {
     if (user) {
       setHistoryLoading(true);
-      fetch("/api/history", { credentials: "include" })
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data: TypingHistoryEntry[]) => {
+      const pending = loadHistory();
+      const syncThenFetch = async () => {
+        if (pending.length > 0) {
+          for (const entry of pending) {
+            const payload = entryToPayload(entry);
+            try {
+              await fetch("/api/history", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+            } catch {
+              // best-effort: continue with rest
+            }
+          }
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // ignore
+          }
+        }
+        try {
+          const res = await fetch("/api/history", { credentials: "include" });
+          const data = res.ok ? (await res.json()) : [];
           setHistory(Array.isArray(data) ? data : []);
-        })
-        .catch(() => setHistory([]))
-        .finally(() => setHistoryLoading(false));
+        } catch {
+          setHistory([]);
+        } finally {
+          setHistoryLoading(false);
+        }
+      };
+      syncThenFetch();
     } else {
       setHistory(loadHistory());
       setHistoryLoading(false);

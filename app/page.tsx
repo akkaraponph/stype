@@ -92,8 +92,15 @@ function SettingsView({
   const [showPasswordForm, setShowPasswordForm] = useState<"none" | "add" | "change">("none");
   const [addEmail, setAddEmail] = useState(user?.email ?? "");
   const [addPassword, setAddPassword] = useState("");
+  const [addConfirmPassword, setAddConfirmPassword] = useState("");
+  const [showAddPassword, setShowAddPassword] = useState(false);
+  const [showAddConfirmPassword, setShowAddConfirmPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
@@ -132,6 +139,7 @@ function SettingsView({
       if (result.ok) {
         setShowPasswordForm("none");
         setAddPassword("");
+        setAddConfirmPassword("");
       } else {
         setPasswordError(result.error);
       }
@@ -152,6 +160,7 @@ function SettingsView({
         setShowPasswordForm("none");
         setCurrentPassword("");
         setNewPassword("");
+        setConfirmNewPassword("");
       } else {
         setPasswordError(result.error);
       }
@@ -265,26 +274,64 @@ function SettingsView({
                     placeholder="Email"
                     className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
                   />
-                  <input
-                    type="password"
-                    value={addPassword}
-                    onChange={(e) => setAddPassword(e.target.value)}
-                    placeholder="Password (min 8 characters)"
-                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showAddPassword ? "text" : "password"}
+                      value={addPassword}
+                      onChange={(e) => setAddPassword(e.target.value)}
+                      placeholder="Password (min 8 characters)"
+                      className="rounded-lg border border-sub/30 bg-background px-3 py-2 pr-10 w-full text-foreground focus:outline-none focus:border-main"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-sub hover:text-foreground"
+                      aria-label={showAddPassword ? "Hide password" : "Show password"}
+                    >
+                      {showAddPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showAddConfirmPassword ? "text" : "password"}
+                      value={addConfirmPassword}
+                      onChange={(e) => setAddConfirmPassword(e.target.value)}
+                      placeholder="Confirm password"
+                      className="rounded-lg border border-sub/30 bg-background px-3 py-2 pr-10 w-full text-foreground focus:outline-none focus:border-main"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAddConfirmPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-sub hover:text-foreground"
+                      aria-label={showAddConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showAddConfirmPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
+                  {addConfirmPassword.length > 0 && addPassword !== addConfirmPassword && (
+                    <p className="text-error text-sm">Passwords do not match.</p>
+                  )}
                   {passwordError && <p className="text-error text-sm">{passwordError}</p>}
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={handleAddPassword}
-                      disabled={passwordSaving || !addEmail.trim() || addPassword.length < 8}
+                      disabled={passwordSaving || !addEmail.trim() || addPassword.length < 8 || addPassword !== addConfirmPassword}
                       className="rounded-lg bg-main/20 hover:bg-main/30 border border-main/50 text-foreground font-medium py-2 px-4 cursor-pointer disabled:opacity-50"
                     >
                       {passwordSaving ? "Saving..." : "Add password"}
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setShowPasswordForm("none"); setPasswordError(null); }}
+                      onClick={() => { setShowPasswordForm("none"); setPasswordError(null); setAddConfirmPassword(""); }}
                       className="rounded-lg border border-sub/30 text-sub hover:text-foreground py-2 px-4 cursor-pointer"
                     >
                       Cancel
@@ -295,33 +342,85 @@ function SettingsView({
 
               {showPasswordForm === "change" && (
                 <div className="p-4 rounded-xl bg-sub/10 border border-sub/20 flex flex-col gap-3">
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Current password"
-                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
-                  />
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New password (min 8 characters)"
-                    className="rounded-lg border border-sub/30 bg-background px-3 py-2 text-foreground focus:outline-none focus:border-main"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      placeholder="Current password"
+                      className="rounded-lg border border-sub/30 bg-background px-3 py-2 pr-10 w-full text-foreground focus:outline-none focus:border-main"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-sub hover:text-foreground"
+                      aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                    >
+                      {showCurrentPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New password (min 8 characters)"
+                      className="rounded-lg border border-sub/30 bg-background px-3 py-2 pr-10 w-full text-foreground focus:outline-none focus:border-main"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-sub hover:text-foreground"
+                      aria-label={showNewPassword ? "Hide password" : "Show password"}
+                    >
+                      {showNewPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showConfirmNewPassword ? "text" : "password"}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="rounded-lg border border-sub/30 bg-background px-3 py-2 pr-10 w-full text-foreground focus:outline-none focus:border-main"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmNewPassword((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-sub hover:text-foreground"
+                      aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmNewPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
+                  {confirmNewPassword.length > 0 && newPassword !== confirmNewPassword && (
+                    <p className="text-error text-sm">Passwords do not match.</p>
+                  )}
                   {passwordError && <p className="text-error text-sm">{passwordError}</p>}
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={handleChangePassword}
-                      disabled={passwordSaving || !currentPassword || newPassword.length < 8}
+                      disabled={passwordSaving || !currentPassword || newPassword.length < 8 || newPassword !== confirmNewPassword}
                       className="rounded-lg bg-main/20 hover:bg-main/30 border border-main/50 text-foreground font-medium py-2 px-4 cursor-pointer disabled:opacity-50"
                     >
                       {passwordSaving ? "Saving..." : "Change password"}
                     </button>
                     <button
                       type="button"
-                      onClick={() => { setShowPasswordForm("none"); setPasswordError(null); }}
+                      onClick={() => { setShowPasswordForm("none"); setPasswordError(null); setConfirmNewPassword(""); }}
                       className="rounded-lg border border-sub/30 text-sub hover:text-foreground py-2 px-4 cursor-pointer"
                     >
                       Cancel

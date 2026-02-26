@@ -13,7 +13,7 @@ type Body = {
   currentPassword?: string;
 };
 
-export async function PATCH(request: Request) {
+export async function POST(request: Request) {
   const session = await getSessionFromRequest(request);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -19,11 +19,18 @@ export function useSession() {
   const fetchSession = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/session", { credentials: "include" });
-      const data = (await res.json()) as {
+      const raw = await res.text();
+      type SessionData = {
         user: SessionUser | null;
         hasPassword?: boolean;
         hasGitHub?: boolean;
       };
+      let data: SessionData;
+      try {
+        data = raw ? (JSON.parse(raw) as SessionData) : { user: null };
+      } catch {
+        data = { user: null };
+      }
       setUser(data.user ?? null);
       setHasPassword(data.hasPassword ?? false);
       setHasGitHub(data.hasGitHub ?? false);
@@ -102,14 +109,20 @@ export function useSession() {
       currentPassword?: string;
     }): Promise<{ ok: true } | { ok: false; error: string }> => {
       const res = await fetch("/api/auth/profile", {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
         credentials: "include",
       });
-      const body = (await res.json()) as { user?: SessionUser; error?: string };
+      const raw = await res.text();
+      let body: { user?: SessionUser; error?: string };
+      try {
+        body = raw ? (JSON.parse(raw) as { user?: SessionUser; error?: string }) : {};
+      } catch {
+        body = { error: res.status === 404 ? "Profile endpoint not available" : "Update failed" };
+      }
       if (!res.ok) {
-        return { ok: false, error: body.error ?? "Update failed" };
+        return { ok: false, error: body.error ?? (res.statusText || "Update failed") };
       }
       if (body.user) setUser(body.user);
       await fetchSession();
