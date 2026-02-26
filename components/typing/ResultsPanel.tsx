@@ -11,7 +11,7 @@ export interface ResultsPanelProps {
   className?: string;
 }
 
-function Sparkline({ buckets }: { buckets: number[] }) {
+export function Sparkline({ buckets }: { buckets: number[] }) {
   if (buckets.length === 0) return null;
   const max = Math.max(...buckets, 1);
   const width = 200;
@@ -58,9 +58,12 @@ export default function ResultsPanel({
     <div
       className={`rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50 p-6 shadow-sm ${className}`}
     >
-      <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-4">
-        Results
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          Results
+        </h2>
+        <span className="text-xs text-green-600 dark:text-green-400">Saved</span>
+      </div>
       <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
         <div>
           <span className="text-zinc-500 dark:text-zinc-400">WPM</span>

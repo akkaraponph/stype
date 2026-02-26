@@ -58,6 +58,18 @@ export default function Controls({
         <span className="text-zinc-500 dark:text-zinc-400">Duration</span>
         <button
           type="button"
+          onClick={() => onDurationChange(15)}
+          disabled={disabled}
+          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
+            duration === 15
+              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
+              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          }`}
+        >
+          15s
+        </button>
+        <button
+          type="button"
           onClick={() => onDurationChange(30)}
           disabled={disabled}
           className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${

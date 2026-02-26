@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useRef, useCallback } from "react";
 
 export interface TestAreaProps {
   text: string;
@@ -10,10 +10,24 @@ export interface TestAreaProps {
   className?: string;
 }
 
+function setRef<T>(ref: React.Ref<T> | undefined, value: T | null) {
+  if (typeof ref === "function") ref(value);
+  else if (ref != null) (ref as React.MutableRefObject<T | null>).current = value;
+}
+
 const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
   function TestArea({ text, input, onKeyDown, disabled, className = "" }, ref) {
+    const inputRef = useRef<HTMLInputElement>(null);
     const chars = text.split("");
     const inputChars = input.split("");
+
+    const setRefs = useCallback(
+      (el: HTMLInputElement | null) => {
+        (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+        setRef(ref, el);
+      },
+      [ref]
+    );
 
     return (
       <div
@@ -21,7 +35,7 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
       >
         <div
           className="min-h-[5rem] cursor-text select-none break-words text-lg sm:text-xl md:text-2xl leading-relaxed sm:leading-loose tracking-wide text-zinc-500 dark:text-zinc-400"
-          onClick={() => (ref as React.RefObject<HTMLInputElement>)?.current?.focus()}
+          onClick={() => inputRef.current?.focus()}
           role="button"
           tabIndex={-1}
           onKeyDown={() => {}}
@@ -49,8 +63,10 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
           })}
         </div>
         <input
-          ref={ref}
+          ref={setRefs}
           type="text"
+          value={input}
+          readOnly
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -59,6 +75,7 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
           tabIndex={0}
           disabled={disabled}
           onKeyDown={onKeyDown}
+          onPaste={(e) => e.preventDefault()}
           className="absolute inset-0 w-full opacity-0 cursor-text"
         />
       </div>

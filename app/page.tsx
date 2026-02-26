@@ -6,6 +6,8 @@ import Controls from "@/components/typing/Controls";
 import StatsBar from "@/components/typing/StatsBar";
 import ResultsPanel from "@/components/typing/ResultsPanel";
 import ThemeSwitch from "@/components/ThemeSwitch";
+import HistoryPanel from "@/components/typing/HistoryPanel";
+import { useTypingHistory } from "@/hooks/useTypingHistory";
 import {
   accuracy,
   avgKeyInterval,
@@ -74,6 +76,8 @@ export default function Home() {
 
   const { data: textData, refetch } = useTestTexts(mode, duration);
   const text = textData?.text ?? "";
+  const { history, addEntry, clearHistory } = useTypingHistory();
+  const savedRef = useRef(false);
 
   const endTest = useCallback(() => {
     setFinished(true);
@@ -110,12 +114,29 @@ export default function Home() {
       ? wpmBucketsFromTimestamps(keyTimestamps, text, input, duration)
       : [];
 
+  // Save result to history when test finishes
+  useEffect(() => {
+    if (finished && !savedRef.current) {
+      savedRef.current = true;
+      addEntry({
+        wpm: currentWpm,
+        accuracy: currentAccuracy,
+        avgIntervalMs: avgInterval,
+        consistency,
+        mode,
+        duration,
+        wpmBuckets,
+      });
+    }
+  }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (finished || !text) return;
 
       if (e.key === "Escape" || (e.ctrlKey && e.key === "r")) {
         e.preventDefault();
+        savedRef.current = false;
         setStarted(false);
         setFinished(false);
         setInput("");
@@ -125,6 +146,9 @@ export default function Home() {
         refetch();
         return;
       }
+
+      if (e.repeat) return;
+      if (e.nativeEvent.isComposing) return;
 
       if (!started) {
         setStarted(true);
@@ -141,14 +165,18 @@ export default function Home() {
 
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        setInput((prev) => prev + e.key);
-        setKeyTimestamps((prev) => [...prev, Date.now()]);
+        setInput((prev) => {
+          if (prev.length >= text.length) return prev;
+          setKeyTimestamps((ts) => [...ts, Date.now()]);
+          return prev + e.key;
+        });
       }
     },
     [finished, text, started, refetch]
   );
 
   const restartSame = useCallback(() => {
+    savedRef.current = false;
     setStarted(false);
     setFinished(false);
     setInput("");
@@ -160,6 +188,7 @@ export default function Home() {
   }, [refetch]);
 
   const changeSettings = useCallback(() => {
+    savedRef.current = false;
     setStarted(false);
     setFinished(false);
     setInput("");
@@ -195,6 +224,7 @@ export default function Home() {
           mode={mode}
           duration={duration}
           onModeChange={(m) => {
+            savedRef.current = false;
             setMode(m);
             setInput("");
             setStarted(false);
@@ -204,6 +234,7 @@ export default function Home() {
             setElapsed(0);
           }}
           onDurationChange={(d) => {
+            savedRef.current = false;
             setDuration(d);
             setInput("");
             setStarted(false);
@@ -248,6 +279,12 @@ export default function Home() {
             />
           </div>
         )}
+
+        <HistoryPanel
+          history={history}
+          onClear={clearHistory}
+          className="mt-8"
+        />
       </main>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 export type TextMode = "words" | "quotes";
-export type Duration = 30 | 60;
+export type Duration = 15 | 30 | 60;
 
 export interface TestTextResponse {
   text: string;

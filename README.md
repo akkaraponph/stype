@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# slowlytype
 
-## Getting Started
+Minimal typing test focused on calm, consistent typing. Track WPM, accuracy, and history.
 
-First, run the development server:
+Built with **[vinext](https://vinext.io/)** — a Vite-based reimplementation of the Next.js API for [Cloudflare Workers](https://workers.cloudflare.com/). Same `app/` routing, React Server Components, and deployment flow; faster builds and smaller bundles.
+
+## Prerequisites
+
+- Node.js 18+
+- npm (or pnpm/yarn)
+
+## Getting started
 
 ```bash
+# Install dependencies
+npm install
+
+# Run dev server (Vite HMR)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Production build
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy to Cloudflare Workers
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Deploy to production
+npm run deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Deploy to a preview URL
+npm run deploy:preview
+```
 
-## Learn More
+Uses [Wrangler](https://developers.cloudflare.com/workers/wrangler/) under the hood; configure `wrangler.toml` and Cloudflare account as needed.
 
-To learn more about Next.js, take a look at the following resources:
+## Tech stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **[vinext](https://vinext.io/)** — Next.js API on Vite, deployable to Cloudflare
+- **React 19** — UI and client state
+- **Tailwind CSS 4** — Styling
+- **TanStack Query** — Data fetching
+- **TypeScript** — Typing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Script            | Command              | Description                    |
+|-------------------|----------------------|--------------------------------|
+| `dev`             | `vite dev`           | Local dev server with HMR      |
+| `build`           | `vite build`         | Production build               |
+| `deploy`          | `vinext deploy`      | Deploy to Cloudflare Workers   |
+| `deploy:preview`  | `vinext deploy --preview` | Deploy to preview URL     |
+| `lint`            | `eslint`             | Run ESLint                     |
+| `test`            | `vitest run`         | Run tests                      |
