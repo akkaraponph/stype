@@ -3,19 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite dev",
+    "build": "vite build",
     "lint": "eslint",
-    "dev:vinext": "vite dev --port 3001",
-    "build:vinext": "vite build",
     "test": "vitest run",
-    "deploy": "npm run build:vinext && wrangler pages deploy dist --project-name=slowlytype",
-    "deploy:preview": "wrangler pages deploy dist --project-name=slowlytype"
+    "deploy": "vinext deploy",
+    "deploy:preview": "vinext deploy --preview"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
-    "next": "16.1.6",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
@@ -28,6 +24,7 @@
     "@vitejs/plugin-rsc": "^0.5.21",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "next": "16.1.6",
     "react-server-dom-webpack": "^19.2.4",
     "tailwindcss": "^4",
     "typescript": "^5",
