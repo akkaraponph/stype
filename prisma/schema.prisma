@@ -1,0 +1,55 @@
+// Prisma schema for slowlytype — PostgreSQL
+// Use a connection pooler URL (Prisma Postgres, Neon, Supabase) for Cloudflare Workers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String?  @unique
+  name         String?
+  image        String?
+  githubId     String?  @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+  typingHistory TypingHistoryEntry[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model TypingHistoryEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  wpm           Float
+  accuracy      Float
+  avgIntervalMs Float
+  consistency   Float?
+  mode          String   // "words" | "quotes"
+  duration      Int      // 15 | 30 | 60
+  language      String?
+  wpmBuckets    Json     // number[]
+  timestamp     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, timestamp(sort: Desc)])
+}

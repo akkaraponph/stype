@@ -1,6 +1,6 @@
 "use client";
 
-import type { Duration, Language, TextMode } from "@/hooks/useTestTexts";
+import type { Duration, Language, TextMode } from "@/hooks/useTypingTexts";
 
 export interface ControlsProps {
   mode: TextMode;
@@ -13,6 +13,8 @@ export interface ControlsProps {
   disabled?: boolean;
   className?: string;
 }
+
+const DURATIONS: Duration[] = [15, 30, 60, 120];
 
 export default function Controls({
   mode,
@@ -27,111 +29,82 @@ export default function Controls({
 }: ControlsProps) {
   return (
     <div
-      className={`flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-sm ${className}`}
+      className={`flex flex-wrap justify-center gap-6 mb-12 bg-sub/5 p-4 rounded-xl transition-all duration-500 ${className}`}
       role="group"
-      aria-label="Test settings"
+      aria-label="Typing settings"
     >
-      <div className="flex items-center gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400">Language</span>
+      <div className="flex items-center gap-2 border-r border-sub/20 pr-6">
         <button
-          type="button"
-          onClick={() => onLanguageChange("en")}
+          onClick={() => onModeChange("time" as any)}
+          className={`text-sm transition-colors px-2 py-1 ${mode === ("time" as any) ? "text-main" : "text-sub hover:text-main"}`}
           disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            language === "en"
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
         >
-          English
+          time
         </button>
         <button
-          type="button"
-          onClick={() => onLanguageChange("th")}
-          disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            language === "th"
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
-        >
-          ไทย
-        </button>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400">Mode</span>
-        <button
-          type="button"
           onClick={() => onModeChange("words")}
+          className={`text-sm transition-colors px-2 py-1 ${mode === "words" ? "text-main" : "text-sub hover:text-main"}`}
           disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            mode === "words"
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
         >
-          Words
+          words
         </button>
         <button
-          type="button"
           onClick={() => onModeChange("quotes")}
+          className={`text-sm transition-colors px-2 py-1 ${mode === "quotes" ? "text-main" : "text-sub hover:text-main"}`}
           disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            mode === "quotes"
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
         >
-          Quote
+          quote
         </button>
       </div>
+
       <div className="flex items-center gap-2">
-        <span className="text-zinc-500 dark:text-zinc-400">Duration</span>
+        {mode === "words" ? (
+          [10, 25, 50, 100].map((val) => (
+            <button
+              key={val}
+              onClick={() => onDurationChange(val as any)}
+              className={`text-sm transition-colors px-2 py-1 ${duration === val ? "text-main" : "text-sub hover:text-main"}`}
+              disabled={disabled}
+            >
+              {val}
+            </button>
+          ))
+        ) : (
+          DURATIONS.map((d) => (
+            <button
+              key={d}
+              onClick={() => onDurationChange(d)}
+              className={`text-sm transition-colors px-2 py-1 ${duration === d ? "text-main" : "text-sub hover:text-main"}`}
+              disabled={disabled}
+            >
+              {d}
+            </button>
+          ))
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 border-l border-sub/20 pl-6">
         <button
-          type="button"
-          onClick={() => onDurationChange(15)}
+          onClick={() => onLanguageChange("en")}
+          className={`text-sm transition-colors px-2 py-1 ${language === "en" ? "text-main" : "text-sub hover:text-main"}`}
           disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            duration === 15
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
         >
-          15s
+          english
         </button>
         <button
-          type="button"
-          onClick={() => onDurationChange(30)}
+          onClick={() => onLanguageChange("th")}
+          className={`text-sm transition-colors px-2 py-1 ${language === "th" ? "text-main" : "text-sub hover:text-main"}`}
           disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            duration === 30
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
         >
-          30s
-        </button>
-        <button
-          type="button"
-          onClick={() => onDurationChange(60)}
-          disabled={disabled}
-          className={`rounded px-3 py-2 min-h-[2.5rem] transition-colors touch-manipulation ${
-            duration === 60
-              ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100"
-              : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          }`}
-        >
-          60s
+          thai
         </button>
       </div>
+      
       <button
-        type="button"
+        aria-label="Restart"
         onClick={onRestart}
-        disabled={disabled}
-        className="rounded px-3 py-2 min-h-[2.5rem] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors touch-manipulation"
-      >
-        Restart
-      </button>
+        className="hidden"
+      />
     </div>
   );
 }

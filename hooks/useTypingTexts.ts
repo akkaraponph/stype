@@ -1,39 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
 
-export type TextMode = "words" | "quotes";
-export type Duration = 15 | 30 | 60;
+export type TextMode = "words" | "quotes" | "time";
+export type Duration = 10 | 15 | 25 | 30 | 50 | 60 | 100 | 120;
 export type Language = "en" | "th";
 
-export interface TestTextResponse {
+export interface TypingTextResponse {
   text: string;
   mode: TextMode;
   duration: number;
   lang?: Language;
 }
 
-async function fetchTestTexts(
+async function fetchTypingTexts(
   mode: TextMode,
   duration: Duration,
   lang: Language
-): Promise<TestTextResponse> {
+): Promise<TypingTextResponse> {
   const params = new URLSearchParams({
     mode,
     duration: String(duration),
     lang,
   });
   const res = await fetch(`/api/texts?${params}`);
-  if (!res.ok) throw new Error("Failed to fetch test text");
+  if (!res.ok) throw new Error("Failed to fetch typing text");
   return res.json();
 }
 
-export function useTestTexts(
+export function useTypingTexts(
   mode: TextMode,
   duration: Duration,
   lang: Language
 ) {
   return useQuery({
-    queryKey: ["testTexts", mode, duration, lang],
-    queryFn: () => fetchTestTexts(mode, duration, lang),
+    queryKey: ["typingTexts", mode, duration, lang],
+    queryFn: () => fetchTypingTexts(mode, duration, lang),
     enabled: true,
   });
 }

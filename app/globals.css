@@ -1,33 +1,60 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;600&display=swap');
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-color: #111111;
+  --main-color: #ffffff;
+  --caret-color: #ffffff;
+  --sub-color: #646669;
+  --text-color: #d1d0c5;
+  --error-color: #ca4754;
 }
 
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+[data-theme="light"] {
+  --bg-color: #f5f5f5;
+  --main-color: #2c3e50;
+  --sub-color: #95a5a6;
+  --text-color: #2c3e50;
+  --error-color: #e74c3c;
+  --caret-color: #888888;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme="nord"] {
+  --bg-color: #2e3440;
+  --main-color: #88c0d0;
+  --sub-color: #4c566a;
+  --text-color: #d8dee9;
+  --error-color: #bf616a;
+  --caret-color: #888888;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg-color);
+  --color-foreground: var(--text-color);
+  --color-main: var(--main-color);
+  --color-sub: var(--sub-color);
+  --color-error: var(--error-color);
+  --color-caret: var(--caret-color);
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-sans);
+  transition: all 0.25s ease;
+}
+
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }

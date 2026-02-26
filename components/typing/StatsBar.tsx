@@ -23,30 +23,28 @@ export default function StatsBar({
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-zinc-500 dark:text-zinc-400 ${className}`}
+      className={`flex flex-wrap items-center gap-6 sm:gap-8 text-sm text-foreground ${className}`}
     >
       <span>
-        <strong className="text-zinc-700 dark:text-zinc-300">WPM</strong>{" "}
-        {Math.round(wpm)}
+        <strong className="font-bold text-sub">WPM</strong>{" "}
+        <span className="font-normal">{Math.round(wpm)}</span>
       </span>
       <span>
-        <strong className="text-zinc-700 dark:text-zinc-300">Accuracy</strong>{" "}
-        {Math.round(accuracy)}%
+        <strong className="font-bold text-sub">Accuracy</strong>{" "}
+        <span className="font-normal">{Math.round(accuracy)}%</span>
       </span>
       <span>
-        <strong className="text-zinc-700 dark:text-zinc-300">Time</strong>{" "}
-        {timeStr}
+        <strong className="font-bold text-sub">Time</strong>{" "}
+        <span className="font-normal">{timeStr}</span>
       </span>
       <span>
-        <strong className="text-zinc-700 dark:text-zinc-300">Smoothness</strong>{" "}
-        {Math.round(avgKeyIntervalMs)} ms
+        <strong className="font-bold text-sub">Smoothness</strong>{" "}
+        <span className="font-normal">{Math.round(avgKeyIntervalMs)} ms</span>
       </span>
       {consistency !== undefined && (
         <span>
-          <strong className="text-zinc-700 dark:text-zinc-300">
-            Consistency
-          </strong>{" "}
-          {Math.round(consistency)}%
+          <strong className="font-bold text-sub">Consistency</strong>{" "}
+          <span className="font-normal">{Math.round(consistency)}%</span>
         </span>
       )}
     </div>

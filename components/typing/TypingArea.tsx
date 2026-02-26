@@ -1,8 +1,8 @@
 "use client";
 
-import { forwardRef, useRef, useCallback, useLayoutEffect, useState } from "react";
+import { memo, forwardRef, useRef, useCallback, useLayoutEffect, useState, useMemo } from "react";
 
-export interface TestAreaProps {
+export interface TypingAreaProps {
   text: string;
   input: string;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -15,16 +15,34 @@ function setRef<T>(ref: React.Ref<T> | undefined, value: T | null) {
   else if (ref != null) (ref as React.MutableRefObject<T | null>).current = value;
 }
 
-const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
-  function TestArea({ text, input, onKeyDown, disabled, className = "" }, ref) {
+const TypingArea = memo(forwardRef<HTMLInputElement, TypingAreaProps>(
+  function TypingArea({ text, input, onKeyDown, disabled, className = "" }, ref) {
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const spanRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(
       null
     );
-    const chars = text.split("");
+    const chars = useMemo(() => text.split(""), [text]);
     const inputChars = input.split("");
+
+    const words = useMemo(() => {
+      let currentIndex = 0;
+      return text.split(/(\s+)/).map((part) => {
+        const isWhitespace = /^\s+$/.test(part);
+        const startIndex = currentIndex;
+        currentIndex += part.length;
+        return {
+          part,
+          isWhitespace,
+          startIndex,
+          chars: part.split("").map((char, localIdx) => ({
+            char,
+            index: startIndex + localIdx,
+          })),
+        };
+      });
+    }, [text]);
 
     const measureCursor = useCallback(() => {
       const container = containerRef.current;
@@ -48,7 +66,7 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
       const y = spanRect.top - containerRect.top;
       setCursorPos({ x, y });
 
-      // Ensure the current character is visible
+      // Ensure the current character is visible (3-line limit simulation)
       const isVisible =
         spanRect.top >= containerRect.top &&
         spanRect.bottom <= containerRect.bottom;
@@ -80,45 +98,57 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
 
     return (
       <div
-        className={`relative font-mono rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50/80 dark:bg-zinc-900/50 px-5 sm:px-6 py-5 sm:py-6 ${className}`}
+        className={`relative font-mono bg-transparent px-0 py-4 ${className}`}
       >
         <div
           ref={containerRef}
-          className="relative min-h-[5rem] max-h-[12rem] overflow-y-auto cursor-text select-none break-words text-lg sm:text-xl md:text-2xl leading-relaxed sm:leading-loose tracking-wide text-zinc-500 dark:text-zinc-400 scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
+          className="relative min-h-[6.75rem] max-h-[6.75rem] overflow-hidden cursor-text select-none text-2xl leading-[2.25rem] transition-all duration-300"
           onClick={() => inputRef.current?.focus()}
           role="button"
           tabIndex={-1}
           onKeyDown={() => {}}
           aria-label="Focus to start typing"
         >
-          {chars.map((char, i) => {
-            const typed = inputChars[i];
-            const isCorrect = typed !== undefined && typed === char;
-            const isIncorrect = typed !== undefined && typed !== char;
-
-            let style = "text-zinc-500 dark:text-zinc-400";
-            if (isCorrect) style = "text-zinc-900 dark:text-zinc-100 font-medium";
-            if (isIncorrect)
-              style =
-                "text-red-600 dark:text-red-400 bg-red-100/60 dark:bg-red-900/30 rounded-sm";
-
-            return (
-              <span
-                key={i}
-                ref={(el) => {
-                  spanRefs.current[i] = el;
-                }}
-                className={style}
-              >
-                {char}
-              </span>
-            );
-          })}
-          {cursorPos !== null && (
+          {words.map((word, partIdx) => (
             <span
-              className="absolute left-0 top-0 h-[1.15em] w-0.5 rounded-sm bg-zinc-900 dark:bg-zinc-100 animate-pulse pointer-events-none transition-transform duration-75 ease-out"
+              key={partIdx}
+              className={word.isWhitespace ? "inline" : "inline-block mx-[0.12rem]"}
+            >
+              {word.chars.map(({ char, index: i }) => {
+                const typed = inputChars[i];
+                const isCorrect = typed !== undefined && typed === char;
+                const isIncorrect = typed !== undefined && typed !== char;
+
+                let style = "relative";
+                if (isCorrect) {
+                  style += " text-foreground";
+                } else if (isIncorrect) {
+                  style += " text-error";
+                } else {
+                  style += " text-sub";
+                }
+
+                return (
+                  <span
+                    key={i}
+                    ref={(el) => {
+                      spanRefs.current[i] = el;
+                    }}
+                    className={style}
+                  >
+                    {char === " " ? "\u00A0" : char}
+                  </span>
+                );
+              })}
+            </span>
+          ))}
+          {cursorPos !== null && (
+            <div
+              className={`absolute w-0.5 h-[1.5rem] bg-caret transition-all duration-150 ease-out animate-pulse pointer-events-none z-10`}
               style={{
-                transform: `translate(${cursorPos.x}px, ${cursorPos.y}px)`,
+                top: 0,
+                left: 0,
+                transform: `translate(${cursorPos.x}px, ${cursorPos.y + 6}px)`,
               }}
               aria-hidden
             />
@@ -138,11 +168,12 @@ const TestArea = forwardRef<HTMLInputElement, TestAreaProps>(
           disabled={disabled}
           onKeyDown={onKeyDown}
           onPaste={(e) => e.preventDefault()}
-          className="absolute inset-0 w-full opacity-0 cursor-text"
+          className="fixed left-[-9999px] top-0 opacity-0 pointer-events-none"
         />
       </div>
     );
   }
-);
+));
+TypingArea.displayName = "TypingArea";
 
-export default TestArea;
+export default TypingArea;

@@ -25,11 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `(function(){var t=localStorage.getItem("slowlytype-theme");if(t==="dark"||t==="light")document.documentElement.classList.add(t);else if(window.matchMedia("(prefers-color-scheme: dark)").matches)document.documentElement.classList.add("dark");else document.documentElement.classList.add("light");})();`,
-        }}
-      />
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem("slowlytype-theme");if(t==="dark"||t==="light"||t==="nord"){document.documentElement.setAttribute("data-theme", t);if(t!=="light")document.documentElement.classList.add("dark");}else if(window.matchMedia("(prefers-color-scheme: dark)").matches){document.documentElement.classList.add("dark");document.documentElement.setAttribute("data-theme", "dark");}else{document.documentElement.setAttribute("data-theme", "light");}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

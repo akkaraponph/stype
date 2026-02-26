@@ -3,6 +3,11 @@ compatibility_date = "2025-05-08"
 compatibility_flags = ["nodejs_compat"]
 main = "./worker/index.ts"
 
+# Set these via: npx wrangler secret put DATABASE_URL (etc.) or in Cloudflare dashboard.
+# For local dev, use .dev.vars (same keys: DATABASE_URL, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, BETTER_AUTH_URL).
+# [vars]
+# BETTER_AUTH_URL = "https://your-worker.workers.dev"
+
 [assets]
 directory = "./dist/client"
 not_found_handling = "none"

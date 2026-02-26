@@ -1,0 +1,8 @@
+# Wrangler local dev: copy this file to .dev.vars and fill in real values.
+# .dev.vars is used when running `npm run dev` / `wrangler dev` so API routes get these env vars.
+
+DATABASE_URL=postgresql://user:password@host:5432/dbname?sslmode=require
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+# Origin only, no path (e.g. http://localhost:5173)
+BETTER_AUTH_URL=http://localhost:3000

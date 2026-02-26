@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import type { TextMode, Duration, Language } from "@/hooks/useTestTexts";
+import type { TextMode, Duration, Language } from "@/hooks/useTypingTexts";
+import type { SessionUser } from "@/hooks/useSession";
 
 export interface TypingHistoryEntry {
   id: string;
@@ -39,38 +40,77 @@ function saveHistory(entries: TypingHistoryEntry[]) {
   }
 }
 
-export function useTypingHistory() {
+export function useTypingHistory(user: SessionUser | null) {
   const [history, setHistory] = useState<TypingHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(!!user);
 
-  // Hydrate from localStorage on mount
+  // When logged in: fetch from API. When not: hydrate from localStorage.
   useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
+    if (user) {
+      setHistoryLoading(true);
+      fetch("/api/history", { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: TypingHistoryEntry[]) => {
+          setHistory(Array.isArray(data) ? data : []);
+        })
+        .catch(() => setHistory([]))
+        .finally(() => setHistoryLoading(false));
+    } else {
+      setHistory(loadHistory());
+      setHistoryLoading(false);
+    }
+  }, [user?.id]);
 
   const addEntry = useCallback(
     (entry: Omit<TypingHistoryEntry, "id" | "timestamp">) => {
-      setHistory((prev) => {
-        const newEntry: TypingHistoryEntry = {
+      if (user) {
+        const payload = {
           ...entry,
-          id: Date.now().toString(36),
-          timestamp: Date.now(),
+          wpmBuckets: entry.wpmBuckets ?? [],
         };
-        const next = [newEntry, ...prev].slice(0, MAX_ENTRIES);
-        saveHistory(next);
-        return next;
-      });
+        fetch("/api/history", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((created: TypingHistoryEntry | null) => {
+            if (created) {
+              setHistory((prev) => [created, ...prev].slice(0, MAX_ENTRIES));
+            }
+          })
+          .catch(() => {});
+      } else {
+        setHistory((prev) => {
+          const newEntry: TypingHistoryEntry = {
+            ...entry,
+            id: Date.now().toString(36),
+            timestamp: Date.now(),
+          };
+          const next = [newEntry, ...prev].slice(0, MAX_ENTRIES);
+          saveHistory(next);
+          return next;
+        });
+      }
     },
-    []
+    [user]
   );
 
   const clearHistory = useCallback(() => {
-    setHistory([]);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
+    if (user) {
+      fetch("/api/history", { method: "DELETE", credentials: "include" })
+        .then(() => setHistory([]))
+        .catch(() => {});
+    } else {
+      setHistory([]);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
     }
-  }, []);
+  }, [user]);
 
-  return { history, addEntry, clearHistory };
+  return { history, addEntry, clearHistory, historyLoading };
 }

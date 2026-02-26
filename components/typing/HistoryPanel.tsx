@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import type { TypingHistoryEntry } from "@/hooks/useTypingHistory";
-import { Sparkline } from "@/components/typing/ResultsPanel";
 
 interface HistoryPanelProps {
   history: TypingHistoryEntry[];
   onClear: () => void;
+  loading?: boolean;
   className?: string;
 }
 
@@ -20,143 +19,71 @@ function formatDate(ts: number): string {
   });
 }
 
-function PersonalBests({ history }: { history: TypingHistoryEntry[] }) {
-  if (history.length === 0) return null;
-
-  const bestWpm = Math.max(...history.map((e) => e.wpm));
-  const bestAccuracy = Math.max(...history.map((e) => e.accuracy));
-  const withConsistency = history.filter((e) => e.consistency !== undefined);
-  const bestConsistency =
-    withConsistency.length > 0
-      ? Math.max(...withConsistency.map((e) => e.consistency!))
-      : undefined;
-
-  return (
-    <div className="grid grid-cols-3 gap-4 mb-4 text-center">
-      <div>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          Best WPM
-        </span>
-        <p className="text-lg font-mono text-zinc-900 dark:text-zinc-100">
-          {Math.round(bestWpm)}
-        </p>
-      </div>
-      <div>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          Best Accuracy
-        </span>
-        <p className="text-lg font-mono text-zinc-900 dark:text-zinc-100">
-          {Math.round(bestAccuracy)}%
-        </p>
-      </div>
-      {bestConsistency !== undefined && (
-        <div>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-            Best Consistency
-          </span>
-          <p className="text-lg font-mono text-zinc-900 dark:text-zinc-100">
-            {Math.round(bestConsistency)}%
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function HistoryPanel({
   history,
   onClear,
+  loading = false,
   className = "",
 }: HistoryPanelProps) {
-  const [open, setOpen] = useState(false);
+  if (loading) {
+    return (
+      <div className={`p-8 text-center text-sub border border-sub/10 rounded-xl ${className}`}>
+        Loading history...
+      </div>
+    );
+  }
+  if (history.length === 0) {
+    return (
+      <div className={`p-8 text-center text-sub border border-sub/10 rounded-xl ${className}`}>
+        No typing sessions yet. Start typing to see your history!
+      </div>
+    );
+  }
 
-  if (history.length === 0) return null;
+  const bestWpm = history.length > 0 ? Math.max(...history.map((e) => e.wpm)).toFixed(2) : "0.00";
+  const avgAcc = history.length > 0 ? (history.reduce((a, b) => a + b.accuracy, 0) / history.length).toFixed(2) : "0.00";
 
   return (
-    <div className={`w-full max-w-3xl ${className}`}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-      >
-        <span
-          className="inline-block transition-transform"
-          style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)" }}
-        >
-          &#9654;
-        </span>
-        History ({history.length})
-      </button>
-
-      {open && (
-        <div className="mt-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50 p-4 shadow-sm">
-          <PersonalBests history={history} />
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-700">
-                  <th className="pb-2 pr-3 font-medium">Date</th>
-                  <th className="pb-2 pr-3 font-medium">Lang</th>
-                  <th className="pb-2 pr-3 font-medium">Mode</th>
-                  <th className="pb-2 pr-3 font-medium">Duration</th>
-                  <th className="pb-2 pr-3 font-medium">WPM</th>
-                  <th className="pb-2 pr-3 font-medium">Accuracy</th>
-                  <th className="pb-2 pr-3 font-medium">Consistency</th>
-                  <th className="pb-2 font-medium">Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((entry) => (
-                  <tr
-                    key={entry.id}
-                    className="border-b border-zinc-100 dark:border-zinc-800 last:border-0"
-                  >
-                    <td className="py-2 pr-3 text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-                      {formatDate(entry.timestamp)}
-                    </td>
-                    <td className="py-2 pr-3 text-zinc-600 dark:text-zinc-300">
-                      {entry.language === "th" ? "Th" : "En"}
-                    </td>
-                    <td className="py-2 pr-3 text-zinc-600 dark:text-zinc-300">
-                      {entry.mode}
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-zinc-700 dark:text-zinc-200">
-                      {entry.duration}s
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-zinc-900 dark:text-zinc-100">
-                      {Math.round(entry.wpm)}
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-zinc-900 dark:text-zinc-100">
-                      {Math.round(entry.accuracy)}%
-                    </td>
-                    <td className="py-2 pr-3 font-mono text-zinc-900 dark:text-zinc-100">
-                      {entry.consistency !== undefined
-                        ? `${Math.round(entry.consistency)}%`
-                        : "—"}
-                    </td>
-                    <td className="py-2">
-                      {entry.wpmBuckets.length > 0 && (
-                        <Sparkline buckets={entry.wpmBuckets} />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-3 flex justify-end">
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-            >
-              Clear history
-            </button>
-          </div>
+    <div className={`w-full ${className}`}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="bg-sub/5 p-6 rounded-xl border border-sub/10">
+          <div className="text-xs text-sub uppercase font-bold tracking-widest mb-1">Personal Best</div>
+          <div className="text-4xl font-bold text-main">{bestWpm} WPM</div>
         </div>
-      )}
+        <div className="bg-sub/5 p-6 rounded-xl border border-sub/10">
+          <div className="text-xs text-sub uppercase font-bold tracking-widest mb-1">Typing completed</div>
+          <div className="text-4xl font-bold text-foreground">{history.length}</div>
+        </div>
+        <div className="bg-sub/5 p-6 rounded-xl border border-sub/10">
+          <div className="text-xs text-sub uppercase font-bold tracking-widest mb-1">Avg. Accuracy</div>
+          <div className="text-4xl font-bold text-foreground">{avgAcc}%</div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-foreground">Recent History</h3>
+        <button
+          onClick={onClear}
+          className="text-xs text-sub hover:text-error transition-colors cursor-pointer"
+        >
+          Clear all history
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {history.slice(0, 50).map((item) => (
+          <div key={item.id} className="flex justify-between items-center bg-sub/5 p-4 rounded-lg hover:bg-sub/10 transition-all border border-transparent hover:border-sub/10">
+            <div className="flex gap-8 items-center">
+              <span className="text-2xl font-bold text-main w-16 text-center">{item.wpm.toFixed(2)}</span>
+              <div className="flex flex-col">
+                <span className="text-xs uppercase text-sub font-bold tracking-tighter">{item.mode} {item.duration}</span>
+                <span className="text-sm font-semibold text-foreground">{item.accuracy.toFixed(2)}% acc</span>
+              </div>
+            </div>
+            <span className="text-xs text-sub font-mono">{formatDate(item.timestamp)}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
