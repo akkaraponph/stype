@@ -4,7 +4,11 @@
       "Bash(npm run build:*)",
       "Bash(timeout 15 npm run dev)",
       "Bash(npx tsc:*)",
-      "Bash(bun db:migrate:*)"
+      "Bash(bun db:migrate:*)",
+      "Bash(npx vinext:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(npm view:*)"
     ]
   }
 }

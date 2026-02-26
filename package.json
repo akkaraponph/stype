@@ -10,7 +10,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "deploy": "vinext deploy",
+    "deploy": "vinext build && node scripts/copy-manifest.mjs && wrangler deploy --config dist/slowlytype/wrangler.json",
     "deploy:preview": "vinext deploy --preview"
   },
   "dependencies": {

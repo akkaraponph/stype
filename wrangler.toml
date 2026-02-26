@@ -1,4 +1,5 @@
 name = "slowlytype"
+account_id = "71f2a04013a332f0131b18dfd30a0689"
 compatibility_date = "2025-05-08"
 compatibility_flags = ["nodejs_compat"]
 main = "./worker/index.ts"
